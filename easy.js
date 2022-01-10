@@ -1,8 +1,8 @@
 var assert = require("assert")
 // Given an array of numbers, return a new array so that positive and negative
 // numbers alternate. You can assume that 0 is a positive number. Within the
-// positive and negative numbers, you must keep their relative order. You are 
-// guaranteed the number of positive and negative numbers will not differ by more 
+// positive and negative numbers, you must keep their relative order. You are
+// guaranteed the number of positive and negative numbers will not differ by more
 // than 1.
 
 // =====Example 1
@@ -31,8 +31,48 @@ var assert = require("assert")
 // Explanation: Empty array...
 
 const altNumbers = (numArray) => {
-    // TODO: COMPLETE THIS FUNCTION
-    return [];
+    // var numArray = [1, -3, -8, -5, 10];
+    var res = [];
+    // Output: [-3, 1, -8, 10, -5]
+    if (numArray.length === 0) {
+        return [];
+    }
+    if (numArray.length !== 0) {
+        //    filter neg & pos
+        var neg = numArray.filter(function (item) {
+            return item < 0;
+        })
+        var pos = numArray.filter((function (item) {
+            return item >= 0;
+        }))
+        // console.log(neg);
+        // console.log(pos);
+        //    cmp len(neg) & len(pos)
+        if (neg.length === pos.length) {
+            for (let i = 0; i < numArray.length; i++) {
+                if (i % 2 === 0) {
+                    res.push(pos.shift());
+                } else {
+                    res.push(neg.shift());
+                }
+            }
+        }
+        //    if eq(len)->
+        else {
+            if (neg.length > pos.length) {
+                for (let i = 0; i < numArray.length; i++) {
+                    if (i % 2 === 0) {
+                        res.push(neg.shift());
+                    } else {
+                        res.push(pos.shift());
+                    }
+                }
+            }
+        }
+        // console.log(res);
+        return res;
+    }
+
 }
 
 module.exports = { altNumbers } // Do not modify this line
@@ -40,7 +80,7 @@ module.exports = { altNumbers } // Do not modify this line
 // ====================TESTS====================
 // Some tests to help you check your progress. Simply run your code with
 // node easy.js
-// If successful, no output should appear. If unsuccessful, you should see 
+// If successful, no output should appear. If unsuccessful, you should see
 // assertion errors being thrown.
 
 let array1 = [1, -3, -8, -5, 10]
@@ -65,7 +105,7 @@ if (array3[0] === 0) {
     for (let i = 0; i < array3.length; i++) {
         assert(array3[i] === answer3a[i])
     }
-} else if (array3[0] == -3) {
+} else if (array3[0] === -3) {
     for (let i = 0; i < array3.length; i++) {
         assert(array3[i] === answer3b[i])
     }
