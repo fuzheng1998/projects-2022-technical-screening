@@ -19,17 +19,20 @@ we will also consider many other criteria.
 import json
 import re
 
-courses_pattern = '[A-Z]{4}[0-9]{4}'
-keywords_pattern = 'or|OR|and|AND|in'
-credit_pattern = '\d+ units'
-level_pattern = 'level \d \w{4} courses'
-brackets_pattern = '\(|\)'
+courses_pattern = r'[A-Z]{4}[0-9]{4}'
+keywords_pattern = 'or|OR|and|AND'
+credit_pattern = r"\d+ units of credit in level \d|\d+ units of credit in \(.*\)|\d+ units of credit"
+level_pattern = r'level \d \w{4} courses'
+brackets_pattern = r'\(|\)'
+credit_pattern01 = r'(\d+) units of credit'
+credit_pattern02 = r'(\d+) units of credit in (level \d+|\(.*\))'
 
 
 def tokenize(input: str):
-    pattern = level_pattern + '|' + courses_pattern + '|' + keywords_pattern + '|' + credit_pattern + '|' + brackets_pattern
+    input = ' '.join(input.split())
+    pattern = credit_pattern + '|' + courses_pattern + '|' + keywords_pattern + '|' + brackets_pattern
     import re
-    print('tokenized: ', re.findall(pattern, input))
+    # print('tokenized: ', re.findall(pattern, input))
     return re.findall(pattern, input)
 
 
@@ -43,6 +46,13 @@ operatorDict = {
     '(': 10000,
     ')': 10000
 }
+
+
+def isCreditToken(token: str):
+    if 'credit' in token:
+        return True
+    else:
+        return False
 
 
 def isLevelOf(courseNum: str, level: str):
@@ -65,14 +75,74 @@ def isStudied(course: str, studied_list: list):
         return False
 
 
+def getLevelX(level: str, studied_ls: list):
+    r = re.compile(r"[A-Z]{4}" + level + r"\d{3}")
+    level_x = list(filter(r.match, studied_ls))
+    return level_x
+
+
 def basicCalculate(left: bool, op: str, right: bool) -> bool:
     res = 0
     if op == 'or' or op == 'OR':
         res = left or right
     elif op == 'and' or op == 'AND':
         res = left and right
-    print(res)
+    # print(res)
     return res
+
+
+def isCredited(credit_token: str, studied_list: list) -> bool:
+    """
+        parse credit token
+        :param credit_token: info with credits, level, course restriction
+        :param studied_list: courses studied list
+        :return: True/False matching course requirement
+        """
+
+    # credit token with 'in'
+    if re.match(credit_pattern02, credit_token) is not None:
+        # print(re.match(credit_pattern02, credit_token).groups())
+        info_group = re.match(credit_pattern02, credit_token).groups()
+        credit_units = int(info_group[0])
+        # if lower than credit required, must be False
+        if len(studied_list) * 6 < credit_units:
+            return False
+        else:
+            # if credit reaches, consider level/course restriction
+            level_match01 = re.match(pattern=r'level (\d+)', string=info_group[1])
+            level_match02 = re.match(pattern=r'\((.*)\)', string=info_group[1])
+            # consider credit token in level X
+            if level_match01:
+                level: str = level_match01.group(1)
+                # get all level x course from course studied list and compare with credit requirement
+                level_x_courses: list = getLevelX(level, studied_list)
+                studied_credits: int = len(level_x_courses) * 6
+                if studied_credits >= credit_units:
+                    return True
+                else:
+                    return False
+            elif level_match02:
+                #
+                course_range: str = level_match02.group(1)
+                course_range_ls: list = course_range.split(', ')
+                tmp_credit = 0
+                for course_studied in studied_list:
+                    if course_studied in course_range_ls:
+                        tmp_credit = tmp_credit + 6
+                if tmp_credit >= credit_units:
+                    return True
+                else:
+                    return False
+    elif re.match(credit_pattern01, credit_token) is not None:
+        # without 'in', only credit required.
+        credit_required = int(re.match(credit_pattern01, credit_token).groups()[0])
+        # print('credit_required: ', credit_required)
+        if len(studied_list) * 6 < credit_required:
+            return False
+        else:
+            return True
+    else:
+        raise SyntaxError(credit_token + 'cannot be parsed')
 
 
 def calculate(studied_list: list, rpn_expr: list):
@@ -83,7 +153,10 @@ def calculate(studied_list: list, rpn_expr: list):
     for i in rpn_expr:
         if isOprands(i):
             # if just course
-            res_stack.append(isStudied(i, studied_list))
+            if isCreditToken(i):
+                res_stack.append(isCredited(i, studied_list))
+            else:
+                res_stack.append(isStudied(i, studied_list))
         else:
             # if meet and/or
             op1 = res_stack.pop()
@@ -93,7 +166,7 @@ def calculate(studied_list: list, rpn_expr: list):
                 return res
             else:
                 res_stack.append(res)
-    print('res_stack in calculate()', res_stack)
+    # print('res_stack in calculate()', res_stack)
     return res_stack
 
 
@@ -142,7 +215,7 @@ def reversePolishOf(tokenized_ls: list):
 
     while len(opStack) != 0:
         res_list.append(opStack.pop())
-    print('reversed polish: ', res_list)
+    # print('reversed polish: ', res_list)
     return res_list
 
 
@@ -162,8 +235,7 @@ def is_unlocked(courses_list, target_course):
     You can assume all courses are worth 6 units of credit
     """
 
-    # TODO: COMPLETE THIS FUNCTION!!!
-    print('requirement: ', CONDITIONS[target_course])
+    # print('requirement: ', CONDITIONS[target_course])
     if len(CONDITIONS[target_course]) == 0:
         return True
     else:
@@ -179,4 +251,6 @@ if __name__ == '__main__':
     test_hard.test_single()
     test_hard.test_empty()
     test_hard.test_compound()
-    pass
+    test_hard.test_simple_uoc()
+    test_hard.test_annoying_uoc()
+    test_hard.test_cross_discipline()
