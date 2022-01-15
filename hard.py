@@ -28,7 +28,13 @@ credit_pattern01 = r'(\d+) units of credit'
 credit_pattern02 = r'(\d+) units of credit in (level \d+|\(.*\))'
 
 
-def tokenize(input: str):
+def tokenize(input: str) -> list:
+    """
+    split str into token phrase with key-info
+
+    :param input: course requirement
+    :return: key-info phrase (token)
+    """
     input = ' '.join(input.split())
     pattern = credit_pattern + '|' + courses_pattern + '|' + keywords_pattern + '|' + brackets_pattern
     import re
@@ -48,27 +54,46 @@ operatorDict = {
 }
 
 
-def isCreditToken(token: str):
+def isCreditToken(token: str) -> bool:
+    """
+    whether token is about credit
+
+    :param token: phrase with keyword 'credit'
+    :return: Boolean
+    """
     if 'credit' in token:
         return True
     else:
         return False
 
 
-def isLevelOf(courseNum: str, level: str):
-    if re.match(pattern='[A-Z]{4}' + level, string=courseNum):
+def isLevelOf(course: str, level: str):
+    if re.match(pattern='[A-Z]{4}' + level, string=course):
         return True
     else:
         return False
 
 
 def isOprands(token) -> bool:
+    """
+    is token of course/credit requirement
+
+    :param token: token split in requirement sentence
+    :return: is type like 'XXXX1234' or 'x units of credit'
+    """
     if re.match(keywords_pattern + '|' + brackets_pattern, token):
         return False
     return True
 
 
 def isStudied(course: str, studied_list: list):
+    """
+    whether the course(str) in token studied
+
+    :param course: course token in
+    :param studied_list:
+    :return: is course in token studied
+    """
     if course in studied_list:
         return True
     else:
@@ -76,12 +101,27 @@ def isStudied(course: str, studied_list: list):
 
 
 def getLevelX(level: str, studied_ls: list):
+    """
+    get level x course list from studied course list
+
+    :param level: level number(str) from token
+    :param studied_ls: studied courses
+    :return: a courses list of specific level in studied course list
+    """
     r = re.compile(r"[A-Z]{4}" + level + r"\d{3}")
     level_x = list(filter(r.match, studied_ls))
     return level_x
 
 
 def basicCalculate(left: bool, op: str, right: bool) -> bool:
+    """
+    for basic A|B, A&&B calculation
+
+    :param left: a boolean indicating whether Operands meet the requirement
+    :param op: AND|and|OR|or
+    :param right: similar to left
+    :return: calculation result(binary calculation)
+    """
     res = 0
     if op == 'or' or op == 'OR':
         res = left or right
@@ -93,12 +133,12 @@ def basicCalculate(left: bool, op: str, right: bool) -> bool:
 
 def isCredited(credit_token: str, studied_list: list) -> bool:
     """
-        parse credit token
-        :param credit_token: info with credits, level, course restriction
-        :param studied_list: courses studied list
-        :return: True/False matching course requirement
-        """
+    parse credit token
 
+    :param credit_token: info with credits, level, course restriction
+    :param studied_list: courses studied list
+    :return: True/False matching course requirement
+    """
     # credit token with 'in'
     if re.match(credit_pattern02, credit_token) is not None:
         # print(re.match(credit_pattern02, credit_token).groups())
@@ -146,7 +186,13 @@ def isCredited(credit_token: str, studied_list: list) -> bool:
 
 
 def calculate(studied_list: list, rpn_expr: list):
-    # rpn_expr = reversePolishOf(tokenized_ls=requirements1)
+    """
+    To calculate whole RPN(list)
+
+    :param studied_list: courses studied list
+    :param rpn_expr: Reversed Polish Notation(list)
+    :return: result of True/False in list
+    """
     # stack element is True/False
     res_stack = []
 
@@ -173,6 +219,7 @@ def calculate(studied_list: list, rpn_expr: list):
 def reversePolishOf(tokenized_ls: list):
     """
     generate reverse Polish e.g. 2*5 -> 25*
+
     :param tokenized_ls:
     :return: reverse_polish:list
     """
@@ -235,7 +282,6 @@ def is_unlocked(courses_list, target_course):
     You can assume all courses are worth 6 units of credit
     """
 
-    # print('requirement: ', CONDITIONS[target_course])
     if len(CONDITIONS[target_course]) == 0:
         return True
     else:
@@ -254,3 +300,4 @@ if __name__ == '__main__':
     test_hard.test_simple_uoc()
     test_hard.test_annoying_uoc()
     test_hard.test_cross_discipline()
+    pass
